@@ -1,0 +1,136 @@
+{
+  "module": [
+    {
+      "name": "Initillization",
+      "iconUrl": "CircleGauge",
+      "targetUrl": "",
+      "routeName": "dashboard",
+      "role": ["developeruser"],
+      "subModulesResponse": [
+        {
+          "name": "Initiallize",
+          "iconUrl": "User",
+          "targetUrl": "/developer/initialize/organization",
+          "routeName": "users",
+          "role": ["developeruser"]
+        }
+      ]
+    },
+
+    {
+      "name": "Setup",
+      "iconUrl": "CircleGauge",
+      "targetUrl": "/admin/dashboard/",
+      "routeName": "dashboard",
+      "role": ["superadmin"],
+      "subModulesResponse": [
+        {
+          "name": "Documents",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/documents",
+          "routeName": "users",
+          "role": ["superadmin"]
+        }
+      ]
+    },
+    {
+      "name": "Navigation",
+      "iconUrl": "User",
+      "targetUrl": "/admin/user",
+      "routeName": "users",
+      "role": ["developeruser", "superadmin"],
+      "subModulesResponse": [
+        {
+          "name": "Modules",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/modules/all-modules",
+          "routeName": "users",
+          "role": ["superadmin"]
+        },
+        {
+          "name": "SubModules",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/submodules/all-submodules",
+          "routeName": "users",
+          "role": ["superadmin"]
+        },
+        {
+          "name": "Menus",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/menus/all-menus",
+          "routeName": "users",
+          "role": ["superadmin"]
+        }
+      ]
+    },
+    {
+      "name": "Access Control",
+      "iconUrl": "ShieldCheck",
+      "targetUrl": "/admin/users",
+      "routeName": "user",
+      "role": ["superadmin"],
+      "subModulesResponse": [
+        {
+          "name": "Users",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/user/all-users",
+          "routeName": "users",
+          "role": ["superadmin"]
+        },
+        {
+          "name": "Roles",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/role/all-roles",
+          "routeName": "users",
+          "role": ["superadmin"]
+        },
+        {
+          "name": "Admin Portals",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/role/all-role",
+          "routeName": "prrtals",
+          "role": ["superadmin"]
+        },
+        {
+          "name": "RolePermission",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/role-permission/all-Roles-Permission",
+          "routeName": "users",
+          "role": ["superadmin"]
+        }
+      ]
+    },
+    {
+      "name": "Institution SetUp",
+      "iconUrl": "ShieldCheck",
+      "targetUrl": "/admin/institutions",
+      "routeName": "institution",
+      "role": ["superadmin"],
+      "subModulesResponse": [
+        {
+          "name": "Institution",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/institutions/all-institutions",
+          "routeName": "users",
+          "role": ["superadmin"]
+        }
+      ]
+    },
+    {
+      "name": "Company SetUp",
+      "iconUrl": "ShieldCheck",
+      "targetUrl": "/admin/company",
+      "routeName": "company",
+      "role": ["superadmins"],
+      "subModulesResponse": [
+        {
+          "name": "Company",
+          "iconUrl": "User",
+          "targetUrl": "/Admin/company/all-company",
+          "routeName": "users",
+          "role": ["superadmins"]
+        }
+      ]
+    }
+  ]
+}

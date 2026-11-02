@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+    .hide-on-print {
+      display: none !important;
+    }
+  }
+  @media print {
+    td[rowspan] {
+      display: table-cell !important;
+    }
+  }
+  

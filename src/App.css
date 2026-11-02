@@ -1,0 +1,47 @@
+/* index.css or App.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+.tooltip .tooltiptext::after {
+  content: " ";
+  position: absolute;
+  top: 100%; /* At the bottom of the tooltip */
+  left: 10%;
+  border-width: 5px;
+  border-style: solid;
+  border-color: black transparent transparent transparent;
+}
+.tooltip .tooltiptext{
+  font-size: 12px;
+  font-weight: medium;
+  visibility: hidden;
+  width: max-content;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  position: absolute;
+  top:-2.3rem;
+  opacity: 0;
+  transition: opacity 1s;
+}
+.tooltip:hover  .tooltiptext{
+  visibility: visible;
+  opacity: 1;
+}
+
+

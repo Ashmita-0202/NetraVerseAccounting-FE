@@ -1,0 +1,357 @@
+import { useGetAllLedgers } from "@/modules/end-user/account/ledger/hooks";
+import { useEffect, useRef, useState } from "react";
+import { SubmitHandler, useForm, UseFormReturn } from "react-hook-form";
+import { useGetSalesRegisterByLedger } from "../hooks";
+import { ISalesReport, salesItems } from "../types/IReport";
+import { InputElement } from "@/components/FormComponents/input";
+import { ButtonElement } from "@/components/FormComponents/Button";
+import { createTheme, ThemeProvider } from "@fluentui/react";
+import { useGetAllItem } from "@/modules/end-user/Inventory/Item/hooks";
+import Pagination from "@/hooks/pagination";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import html2pdf from "html2pdf.js";
+import * as XLSX from "xlsx";
+import { useGetAllLedgerGroups } from "@/modules/end-user/account/ledgerGroup/hooks";
+import { AppCombobox } from "@/components/common/ComboBox";
+import { useTranslation } from "react-i18next";
+import ClipLoader from "react-spinners/ClipLoader";
+type Props = {
+  form: UseFormReturn<ISalesReport>;
+};
+
+const SalesReportRegisterForm = ({ form }: Props) => {
+  const { t } = useTranslation();
+  const { data: allLedgers } = useGetAllLedgers();
+  const { data: AllLedgerGroup } = useGetAllLedgerGroups();
+  const [paginationParams, setPaginationParams] = useState({
+    pageSize: 20,
+    pageIndex: 1,
+    isPagination: true,
+  });
+  const [state, setState] = useState({
+    loading: false,
+    Sales: [] as ISalesReport[],
+    errorMessage: "",
+  });
+  type SearchParam = {
+    pageSize: number;
+    pageIndex: number;
+    isPagination: boolean;
+  };
+  const updateState = (updates: Partial<typeof state>) => {
+    setState((prev) => ({ ...prev, ...updates }));
+  };
+  const handleSearch = (params: SearchParam) => {
+    params.pageSize = paginationParams.pageSize;
+    setPaginationParams(params);
+    updateState({ loading: true, Sales: [] });
+  };
+  const handleSubmit = useForm<ISalesReport>({
+    defaultValues: {
+      ledgerId: "",
+      startDate: "",
+      endDate: "",
+    },
+  });
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const [, setIsPrinting] = useState(false);
+  const { data: allItems } = useGetAllItem();
+  const query = `?pageSize=${paginationParams.pageSize}&pageIndex=${paginationParams.pageIndex}&IsPagination=${paginationParams.isPagination}`;
+  const [selectedLedgerId, setSelectedLedgerId] = useState("");
+  const [params, setParams] = useState<string | null>(null);
+  const { data, error, refetch } = useGetSalesRegisterByLedger(
+    query + (params || "")
+  );
+  const handlePrint = () => {
+    const originalPaginationParams = { ...paginationParams };
+    setPaginationParams({
+      pageSize: 10000,
+      pageIndex: 1,
+      isPagination: false,
+    });
+
+    setIsPrinting(true);
+
+    setTimeout(() => {
+      if (tableRef.current) {
+        html2pdf()
+          .from(tableRef.current)
+          .save("salesReport.pdf")
+          .finally(() => {
+            setPaginationParams(originalPaginationParams);
+            setIsPrinting(false);
+          });
+      }
+    }, 100);
+  };
+  const handleClear = () => {
+    refetch();
+    form.reset();
+    setSelectedLedgerId("");
+  };
+  const handleExportExcel = async () => {
+    const originalPagination = { ...paginationParams };
+
+    setPaginationParams({
+      pageSize: 10000,
+      pageIndex: 0,
+      isPagination: false,
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const alljournalreport = data?.Items || [];
+
+      if (alljournalreport.length === 0) {
+        console.error("No data available to export.");
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(alljournalreport);
+      XLSX.utils.book_append_sheet(wb, ws, "sales Report");
+      XLSX.writeFile(wb, "salesReport.xlsx");
+    } catch (error) {
+      console.error("Error exporting data:", error);
+    } finally {
+      setPaginationParams(originalPagination);
+    }
+  };
+
+  useEffect(() => {
+    if (error) {
+      console.error("API Error:", error);
+    }
+  }, [error, refetch]);
+
+  const handleSelectLedger = (ledgerId: string) => {
+    form.setValue("ledgerId", ledgerId);
+  };
+
+  const onSubmit: SubmitHandler<ISalesReport> = async (formData) => {
+    try {
+      const queryParams = [
+        formData.ledgerId
+          ? `ledgerId=${encodeURIComponent(formData.ledgerId)}`
+          : null,
+        formData.startDate
+          ? `startDate=${encodeURIComponent(formData.startDate)}`
+          : null,
+        formData.endDate
+          ? `endDate=${encodeURIComponent(formData.endDate)}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("&");
+
+      const fullQuery = queryParams ? `&${queryParams}` : "";
+      setParams(fullQuery);
+      await refetch();
+    } catch (error) {
+      console.error("Error during form submission:", error);
+      updateState({
+        errorMessage:
+          "There was an error fetching the Sales report. Please try again later.",
+      });
+    }
+  };
+
+  const customTheme = createTheme({ palette: { themePrimary: "#14b8a6" } });
+  return (
+    <div className="p-2">
+      {state.loading && (
+        <div className="fixed ml-60 inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <ClipLoader color="#36d7b7" size={50} />
+        </div>
+      )}
+      {state.errorMessage && (
+        <p className="text-center text-red-500">{state.errorMessage}</p>
+      )}
+      <div className="p-6 bg-white rounded-lg shadow-md">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid grid-cols-4 gap-4 p-4 bg-gray-100 rounded-md"
+        >
+          <div className="">
+            {allLedgers && (
+              <AppCombobox
+                dropDownWidth="w-full"
+                dropdownPositionClass="absolute"
+                label="Ledger"
+                options={allLedgers.Items}
+                value={selectedLedgerId}
+                selected={
+                  allLedgers.Items.find((g) => g.id === selectedLedgerId) ||
+                  null
+                }
+                onSelect={(group) => {
+                  if (group) {
+                    setSelectedLedgerId(group.id);
+                    handleSelectLedger(group.id || "");
+                  } else {
+                    setSelectedLedgerId("");
+                  }
+                }}
+                getLabel={(g) => g?.name ?? ""}
+                getValue={(g) => g?.id ?? ""}
+                renderOptionExtra={(g) => (
+                  <div>
+                    {
+                      AllLedgerGroup?.Items.find(
+                        (i) => i.id === g?.ledgerGroupId
+                      )?.name
+                    }
+                  </div>
+                )}
+              />
+            )}
+          </div>
+
+          <InputElement
+            label="Start Date"
+            form={form}
+            name="startDate"
+            inputType="date"
+            placeholder="Start Date"
+          />
+
+          <InputElement
+            label="End Date"
+            form={form}
+            name="endDate"
+            inputType="date"
+            placeholder="End Date"
+          />
+
+          <div className="flex justify-center items-center  h-full mt-1">
+            <ThemeProvider theme={customTheme}>
+              <ButtonElement
+                className="flex "
+                style={{
+                  backgroundColor: customTheme.palette.themePrimary,
+                  padding: "5px 0",
+                  borderRadius: "8px",
+                }}
+                type="submit"
+                text="Submit"
+              />
+            </ThemeProvider>
+            <ThemeProvider theme={customTheme} className="ml-4">
+              <ButtonElement
+                className="flex "
+                style={{
+                  backgroundColor: customTheme.palette.themePrimary,
+                  padding: "5px 0",
+                  borderRadius: "8px",
+                }}
+                onClick={handleClear}
+                type="button"
+                text="Clear"
+              />
+            </ThemeProvider>
+          </div>
+        </form>
+        <div className=" flex items-center justify-center z-50 w-full">
+          <div className="w-full  h-[98%] bg-white p-4 shadow-lg overflow-auto relative">
+            <div ref={tableRef}>
+              <div className="overflow-x-auto">
+                {data?.Items && data.Items.length > 0 ? (
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-200 text-lg">
+                        <th className="border p-3">{t("Date")}</th>
+                        <th className="border p-3">{t("Bill No")}</th>
+                        <th className="border p-3">
+                          {t("Account")} {t("ID")}
+                        </th>
+                        <th className="border p-3">{t("Total Amount")}</th>
+                        <th className="border p-3">
+                          {t("Purchase")} {t("Items")}
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {data.Items.map((item, index: number) => (
+                        <tr key={index} className="text-center border">
+                          <td className="border p-3">{item.date}</td>
+                          <td className="border p-3">{item.billNumber}</td>
+                          <td className="border p-3">
+                            {
+                              allLedgers?.Items.find(
+                                (i) => i.id === item.accountId
+                              )?.name
+                            }
+                          </td>
+                          <td className="border p-3">{item.totalAmount}</td>
+                          <td className="border p-3">
+                            {item.salesRegisterItems?.map(
+                              (salesItems: salesItems) => {
+                                return allItems?.Items.find(
+                                  (i) => i.id === salesItems.itemId
+                                )?.name;
+                              }
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : selectedLedgerId === "" ? (
+                  <div>{t("Please Fill the Required Criteria")}</div>
+                ) : (
+                  <p className="text-center text-red-500">
+                    {t("No Purchase Data Found")}.
+                  </p>
+                )}
+              </div>
+              {data?.Items && data.Items.length > 0 && (
+                <Pagination
+                  form={handleSubmit}
+                  pagination={{
+                    currentPage: Array.isArray(data) ? 1 : data?.PageIndex ?? 1,
+                    firstPage: Array.isArray(data) ? 1 : data?.FirstPage ?? 1,
+                    lastPage: Array.isArray(data) ? 1 : data?.LastPage ?? 1,
+                    nextPage: Array.isArray(data) ? 1 : data?.NextPage ?? 1,
+                    previousPage: Array.isArray(data)
+                      ? 1
+                      : data?.PreviousPage ?? 1,
+                  }}
+                  handleSearch={handleSearch}
+                />
+              )}
+            </div>
+            <div className="flex justify-end space-x-2  mt-4">
+              <select
+                onChange={(e) => {
+                  if (e.target.value === "pdf") {
+                    handlePrint();
+                  } else if (e.target.value === "excel") {
+                    handleExportExcel();
+                  }
+                }}
+                className="border rounded-md h-8 text-white bg-teal-500"
+              >
+                <option value="" className="bg-white text-black">
+                  {t("Export")}
+                </option>
+                <option value="pdf" className="bg-white text-black">
+                  {t("Print as PDF")}
+                </option>
+                <option value="excel" className="bg-white text-black">
+                  {t("Export as Excel")}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* {isModalOpen && (
+        
+      )} */}
+    </div>
+  );
+};
+
+export default SalesReportRegisterForm;
